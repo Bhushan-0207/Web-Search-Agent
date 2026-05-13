@@ -124,9 +124,7 @@ function App() {
     const decoder = new TextDecoder();
 
     let done = false;
-
     let fullText = "";
-
     let sseBuffer = "";
 
     while (!done) {
@@ -135,20 +133,15 @@ function App() {
       done = result.done;
 
       const chunk = decoder.decode(result.value || new Uint8Array());
-
       // accumulate raw stream
       sseBuffer += chunk;
-
       // split complete SSE events
       const events = sseBuffer.split("\n\n");
-
       // keep incomplete event
       sseBuffer = events.pop() || "";
-
       for (const event of events) {
         // extract all SSE data lines
         const lines = event.split("\n");
-
         let text = "";
 
         for (const line of lines) {
@@ -156,19 +149,15 @@ function App() {
             text += line.replace(/^data:\s*/, "") + "\n";
           }
         }
-
         text = text.trim();
-
         // stream finished
         if (text === "[DONE]") {
           done = true;
-
           break;
         }
 
         fullText += text + "\n";
       }
-
       
       setMessages((prev) => {
         const updated = [...prev];

@@ -33,20 +33,15 @@ def home():
 
 @app.post("/chat")
 def chat(request: chatRequest):
-
     result = graph.invoke({
-
         "messages": [
-
             HumanMessage(
-
                 content=request.message
             )
         ]
     })
     final_message = result["messages"][-1]
     return {
-
         "response": final_message.content
     }
 
@@ -73,44 +68,27 @@ Always respond in proper markdown format.
                 if (
 
                     "\n\n" in buffer or
-
                     "```" in buffer or
-
                     len(buffer) > 300
                 ):
                     safe_chunk = buffer.replace("\r", "")
-
                     lines = safe_chunk.split("\n")
-
                     sse_message = ""
-
                     for line in lines:
-
                         sse_message += f"data: {line}\n"
-
                     sse_message += "\n"
-
                     yield sse_message
-
                     buffer = ""
 
         # remaining text
         if buffer:
-
             safe_chunk = buffer.replace("\r", "")
-
             lines = safe_chunk.split("\n")
-
             sse_message = ""
-
             for line in lines:
-
                 sse_message += f"data: {line}\n"
-
             sse_message += "\n"
-
             yield sse_message
-
 
         yield "data: [DONE]\n\n"
 

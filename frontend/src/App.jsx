@@ -3,68 +3,98 @@ import { chat } from "./services/api";
 import { streamChat } from "./services/api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 function App() {
   const [messages, setMessages] = useState([]);
 
   const [input, setInput] = useState("");
 
-  function formatMarkdown(text) {
-    if (!text) return "";
+  // function formatMarkdown(text) {
+  //   if (!text) return "";
 
-    return (
-      text
-        // Ensure proper spacing before headings
-        .replace(/\n(#+\s)/g, "\n\n$1")
-        .replace(/^(#+\s)/gm, "\n$1")
+  //   return (
+  //     text
+  //       // Ensure proper spacing before headings
+  //       .replace(/([.!?])([A-Z#*-])/g, "$1\n\n$2")
+  //       .replace(/\n(#+\s)/g, "\n\n$1")
+  //       .replace(/([a-z])(- )/g, "$1\n\n$2")
+  //       .replace(/^(#+\s)/gm, "\n$1")
 
-        // Add spacing after headings
-        .replace(/(#+\s[^\n]+)\n([^\n#-])/g, "$1\n\n$2")
+  //       // Add spacing after headings
+  //       .replace(/(#+\s[^\n]+)\n([^\n#-])/g, "$1\n\n$2")
+  //       .replace(/```(\w+)/g, "\n\n```$1")
+  //       .replace(/```/g, "\n```")
+  //       // Format unordered lists - ensure newline before dash
+  //       .replace(/\n- /g, "\n- ")
+  //       .replace(/^- /gm, "- ")
 
-        // Format unordered lists - ensure newline before dash
-        .replace(/\n- /g, "\n- ")
-        .replace(/^- /gm, "- ")
+  //       // Format numbered lists
+  //       .replace(/\n(\d+\.\s)/g, "\n$1")
+  //       .replace(/([^\n])(\d+\.\s)/g, "$1\n$2")
 
-        // Format numbered lists
-        .replace(/\n(\d+\.\s)/g, "\n$1")
-        .replace(/([^\n])(\d+\.\s)/g, "$1\n$2")
+  //       // Ensure spacing around code blocks
+  //       .replace(/\n```/g, "\n\n```")
+  //       .replace(/```\n/g, "```\n\n")
+  //       .replace(/```(\w+)/g, "```$1")
 
-        // Ensure spacing around code blocks
-        .replace(/\n```/g, "\n\n```")
-        .replace(/```\n/g, "```\n\n")
-        .replace(/```(\w+)/g, "```$1")
+  //       // Inline code formatting
+  //       .replace(/`([^`]+)`/g, "`$1`")
 
-        // Inline code formatting
-        .replace(/`([^`]+)`/g, "`$1`")
+  //       // Bold text spacing
+  //       .replace(/\*\*([^\*]+)\*\*/g, "**$1**")
+  //       .replace(/(\*\*[^\*]+\*\*)([^\s\n])/g, "$1 $2")
 
-        // Bold text spacing
-        .replace(/\*\*([^\*]+)\*\*/g, "**$1**")
-        .replace(/(\*\*[^\*]+\*\*)([^\s\n])/g, "$1 $2")
+  //       // Italic spacing
+  //       .replace(/\*([^\*]+)\*/g, "*$1*")
 
-        // Italic spacing
-        .replace(/\*([^\*]+)\*/g, "*$1*")
+  //       // Links formatting
+  //       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "[$1]($2)")
 
-        // Links formatting
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "[$1]($2)")
+  //       // Blockquotes
+  //       .replace(/\n> /g, "\n> ")
+  //       .replace(/^> /gm, "> ")
 
-        // Blockquotes
-        .replace(/\n> /g, "\n> ")
-        .replace(/^> /gm, "> ")
+  //       // Tables - ensure they're on their own lines
+  //       .replace(/(\|[^\n]+\|)\n([^\n|])/g, "$1\n\n$2")
+  //       .replace(/([^\n|])\n(\|[^\n]+\|)/g, "$1\n\n$2")
 
-        // Tables - ensure they're on their own lines
-        .replace(/(\|[^\n]+\|)\n([^\n|])/g, "$1\n\n$2")
-        .replace(/([^\n|])\n(\|[^\n]+\|)/g, "$1\n\n$2")
+  //       // Horizontal rules
+  //       .replace(/\n---\n/g, "\n\n---\n\n")
+  //       .replace(/^---$/gm, "\n---\n")
 
-        // Horizontal rules
-        .replace(/\n---\n/g, "\n\n---\n\n")
-        .replace(/^---$/gm, "\n---\n")
+  //       // Paragraph spacing - max 2 newlines
+  //       .replace(/\n{3,}/g, "\n\n")
 
-        // Paragraph spacing - max 2 newlines
-        .replace(/\n{3,}/g, "\n\n")
+  //       .trim()
+  //   );
+  // }
 
-        .trim()
-    );
-  }
+  // function normalizeChunk(text) {
+  //   return (
+  //     text
+
+  //       // heading spacing
+  //       .replace(/(#+)/g, "\n\n$1")
+
+  //       // list spacing
+  //       .replace(/(\.)(- )/g, "$1\n\n$2")
+
+  //       // code block spacing
+  //       .replace(/```(\w+)/g, "\n\n```$1\n")
+
+  //       // table spacing
+  //       .replace(/\|\s+\|/g, " |\n| ")
+
+  //       // paragraph spacing
+  //       .replace(/([a-z])([A-Z#])/g, "$1\n\n$2")
+
+  //       // collapse excessive spaces
+  //       .replace(/\n{3,}/g, "\n\n")
+  //   );
+  // }
 
   async function handleSend() {
     if (!input.trim()) return;
@@ -87,56 +117,70 @@ function App() {
 
     setMessages((prev) => [...prev, aiMessage]);
 
-    try {
-      const response = await streamChat(currentInput);
+    const response = await streamChat(currentInput);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    const reader = response.body.getReader();
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+    const decoder = new TextDecoder();
 
-      let done = false;
-      let fullText = "";
+    let done = false;
 
-      while (!done) {
-        const result = await reader.read();
-        done = result.done;
+    let fullText = "";
 
-        const chunk = decoder.decode(result.value || new Uint8Array());
-        const lines = chunk.split("\n");
+    let sseBuffer = "";
+
+    while (!done) {
+      const result = await reader.read();
+
+      done = result.done;
+
+      const chunk = decoder.decode(result.value || new Uint8Array());
+
+      // accumulate raw stream
+      sseBuffer += chunk;
+
+      // split complete SSE events
+      const events = sseBuffer.split("\n\n");
+
+      // keep incomplete event
+      sseBuffer = events.pop() || "";
+
+      for (const event of events) {
+        // extract all SSE data lines
+        const lines = event.split("\n");
+
+        let text = "";
 
         for (const line of lines) {
-          // Parse SSE data lines
           if (line.startsWith("data: ")) {
-            const text = line.replace("data: ", "");
-            if (text) {
-              fullText += text;
-            }
+            text += line.replace(/^data:\s*/, "") + "\n";
           }
         }
 
-        // Update UI with streaming content in real-time
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
-            role: "assistant",
-            content: fullText,
-            streaming: !done,
-          };
-          return updated;
-        });
+        text = text.trim();
+
+        // stream finished
+        if (text === "[DONE]") {
+          done = true;
+
+          break;
+        }
+
+        fullText += text + "\n";
       }
-    } catch (error) {
-      console.error("Streaming error:", error);
+
+      
       setMessages((prev) => {
         const updated = [...prev];
+
         updated[updated.length - 1] = {
           role: "assistant",
-          content: `Error: ${error.message}`,
-          streaming: false,
+
+          content: fullText,
+
+          streaming: !done,
         };
+
         return updated;
       });
     }
@@ -152,9 +196,6 @@ function App() {
         {messages.map((message, index) => (
           <div key={index}>
             {message.role === "user" ? (
-              // --------------------------------
-              // USER MESSAGE
-              // --------------------------------
 
               <div className="flex justify-end">
                 <div
@@ -191,11 +232,15 @@ function App() {
                   {message.streaming ? (
                     <div className="whitespace-pre-wrap leading-relaxed">
                       {message.content}
+
                       <span className="animate-pulse">▌</span>
                     </div>
                   ) : (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {formatMarkdown(message.content)}
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeHighlight, rehypeKatex]}
+                    >
+                      {message.content}
                     </ReactMarkdown>
                   )}
                 </div>

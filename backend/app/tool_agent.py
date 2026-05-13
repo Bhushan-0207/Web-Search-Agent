@@ -33,9 +33,3 @@ def web_search(query: str):
 tools =[calculator,web_search]
 
 llm_with_tools = llm.bind_tools(tools)
-
-response  = llm_with_tools.invoke(
-    "What is 567 * 98?"
-)
-
-print(response)

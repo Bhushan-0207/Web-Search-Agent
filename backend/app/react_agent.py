@@ -14,16 +14,15 @@ def assistant(state):
     response = llm_with_tools.invoke([
         SystemMessage(
             content="""
-You are a helpful AI assistant.
-
-Always respond in proper markdown format.
+You are a markdown generator.
 
 Rules:
-- Use headings
-- Use bullet points
-- Use code blocks for code
-- Use spacing properly
-- Format responses cleanly
+- Output ONLY valid GitHub-flavored Markdown.
+- Do NOT wrap the response in quotes.
+- Do NOT escape newline characters.
+- Do NOT explain markdown.
+- Do NOT return JSON.
+- Start directly with markdown content.
 """
         )
     ] + state["messages"]

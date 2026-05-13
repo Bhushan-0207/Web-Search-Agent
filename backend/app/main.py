@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from app.tools import search_web
 from app.react_agent import graph
 from app.config import llm
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage,SystemMessage
 
 
 
@@ -52,73 +52,80 @@ def chat(request: chatRequest):
 
 def generation_stream(message: str):
 
-    from langchain_core.messages import SystemMessage
-
     system_message = SystemMessage(
         content="""
 You are a helpful AI assistant.
 
 Always respond in proper markdown format.
-
-Rules:
-- Use headings
-- Use bullet points
-- Use code blocks
-- Use proper spacing
 """
     )
 
     try:
-
         buffer = ""
-
-
         for chunk in llm.stream([
-
             system_message,
-
             HumanMessage(content=message)
 
         ]):
-
             if chunk.content:
-
                 buffer += chunk.content
-
-
-                # --------------------------------
-                # SEND LARGER STABLE CHUNKS
-                # --------------------------------
 
                 if (
 
-                    len(buffer) > 50 or
+                    "\n\n" in buffer or
 
-                    "\n" in buffer or
+                    "```" in buffer or
 
-                    "." in buffer
+                    len(buffer) > 300
                 ):
+                    safe_chunk = buffer.replace("\r", "")
 
-                    yield f"data: {buffer}\n\n"
+                    lines = safe_chunk.split("\n")
+
+                    sse_message = ""
+
+                    for line in lines:
+
+                        sse_message += f"data: {line}\n"
+
+                    sse_message += "\n"
+
+                    yield sse_message
 
                     buffer = ""
 
-
-        # send remaining text
+        # remaining text
         if buffer:
 
-            yield f"data: {buffer}\n\n"
+            safe_chunk = buffer.replace("\r", "")
 
+            lines = safe_chunk.split("\n")
+
+            sse_message = ""
+
+            for line in lines:
+
+                sse_message += f"data: {line}\n"
+
+            sse_message += "\n"
+
+            yield sse_message
+
+
+        yield "data: [DONE]\n\n"
 
     except Exception as e:
 
         yield f"data: Error: {str(e)}\n\n"
 
-
 @app.post("/stream")
 async def stream_chat(requset: chatRequest):
     return StreamingResponse(
         generation_stream(requset.message),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
+        headers={
+            "Catch-Control":"no-catch",
+            "Connection":"keep-alive"
+        }
     )
 

@@ -60,7 +60,6 @@ Always respond in proper markdown format.
         for chunk in llm.stream([
             system_message,
             HumanMessage(content=message)
-
         ]):
             if chunk.content:
                 buffer += chunk.content
